@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>UNTITLED</title>
+    <script src="https://cdn.jsdelivr.net/gh/jspsych/jsPsych@6.3.0/jspsych.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/jspsych/jsPsych@6.3.0/plugins/jspsych-html-button-response.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/jspsych/jsPsych@6.3.0/plugins/jspsych-html-keyboard-response.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/jspsych/jsPsych@6.3.0/plugins/jspsych-cloze.js"></script>
+    <script src="./utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/jspsych/jsPsych@6.1.0/plugins/jspsych-survey-text.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/jspsych/jsPsych@6.1.0/plugins/jspsych-survey-likert.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/jspsych/jsPsych@6.1.0/plugins/jspsych-instructions.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/jspsych/jsPsych@6.1.0/plugins/jspsych-audio-button-response.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/jspsych/jsPsych@6.1.0/plugins/jspsych-survey-multi-select.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/jspsych/jsPsych@6.1.0/plugins/jspsych-survey-multi-choice.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/jspsych/jsPsych@6.1.0/plugins/jspsych-survey-html-form.js"></script>
+    <link href="https://cdn.jsdelivr.net/gh/jspsych/jsPsych@6.3.0/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+</head>
+
+<body></body>
+
+<script>
+
+    var ID;
+    //var num_pairs = 150;
+    // get the client IP address
+    var req = new XMLHttpRequest();
+    req.overrideMimeType("application/json");
+    req.open('GET', 'https://jsonip.com', false);
+    req.onload = function () {
+        var jsonResponse = JSON.parse(req.responseText);
+        ID = jsonResponse["ip"].replace(new RegExp(':', 'g'), "-")
+    };
+    req.send(null);
+
+    console.log(ID)
+    fetch("data/cloze_prompts.json")
+        .then(res => res.json())
+        //.then(data => stimuli_set = data.videos) //Need to remove?
+        //.then(data =>{console.log(data)})
+        .then(data => {
+
+            var cloze_prompts = data["cloze_prompt"]
+            console.log(cloze_prompts)
+            var timeline = []
+
+            //////////////////////////////////
+            /// Opening information slides //
+            ////////////////////////////////
+
+            timeline.push(welcome)
+            timeline.push(instructions)
+
+            /////////////////////////////////////////
+            /// Testing word_pair stimuli section //
+            ///////////////////////////////////////
+            for (var i = 0; i < cloze_prompts.length; i++) {
+                var prompt = cloze_prompts[i]
+                timeline.push({
+                    type: 'cloze',
+                    text: prompt,
+                    required: true,
+                    on_finish: function (data) {
+                        console.log(data);
+                        saveData(ID + "_experiment_data", jsPsych.data.get().csv());
+                    }
+                })
+            }
+            
+            timeline.push(goodbye)
+
+            jsPsych.data.addProperties({ subject: ID });
+
+            jsPsych.init({
+                timeline: timeline,
+                show_preload_progress_bar: true,
+                on_finish: function () { saveData(ID + "_experiment_data", jsPsych.data.get().csv()); },
+            })
+        })
+
+
+</script>
+
+</html>
